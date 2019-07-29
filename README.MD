@@ -22,12 +22,12 @@ if err != nil {
 
 ```
 
-### 选择模版并填充数据
+#### 选择模版并填充数据
 
 ```
 //透传模版消息
 
-t := getui.TransmissionTemplate{}
+t := getui.NewTransmissionTemplate(client.AppKey)
 t.Transmission.TransmissionContent = "test"
 t.PushInfo.Aps.Alert.Title = "test"
 t.PushInfo.Aps.Alert.Body = "test"
@@ -35,7 +35,7 @@ t.PushInfo.Aps.AutoBadge = "+1"
 t.PushInfo.Aps.ContentAvailable = 1
 
 // 通知模版消息
-n := getui.NotificationTemplate{}
+n := getui.NewNotificationTemplate(client.AppKey)
 n.Notification.Style.Text = "test"
 n.Notification.Style.Title = "test"
 
@@ -48,14 +48,14 @@ n.Notification.Style.Title = "test"
 
 // 单推 cid
 CID := "cid"
-result, err := client.PushToSingle(&t, CID)
+result, err := client.PushToSingle(t, CID)
 if err != nil {
   fmt.Println(err)
 }
 fmt.Printf("push to single result: %v\n", result)
 
 // 推 APP
-result, err = client.PushToApp(&t, nil)
+result, err = client.PushToApp(t, nil)
 if err != nil {
   fmt.Println(err)
 }
@@ -66,4 +66,4 @@ fmt.Printf("push to app result: %v\n", result)
 
 ## 示例
 
-见 main.go
+见 example
