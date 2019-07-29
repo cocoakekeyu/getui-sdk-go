@@ -5,12 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/cocoakekeyu/getui-sdk-go/getui/utils"
+	"github.com/cocoakekeyu/getui-sdk-go/utils"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"reflect"
-	"strings"
 	"time"
 )
 
@@ -22,54 +20,6 @@ const (
 	USER_STATUS_URL_TPL = "https://restapi.getui.com/v1/%s/user_status/%s"
 	STOP_TASK_URL_TPL   = "https://restapi.getui.com/v1/%s/stop_task/%s"
 )
-
-func EnsureTemplateValue(t interface{}, AppKey string) error {
-
-	vv := reflect.ValueOf(t)
-	if vv.Kind() != reflect.Ptr {
-		return fmt.Errorf("t is not a pointer value")
-	}
-	value := vv.Elem()
-	if value.Kind() != reflect.Struct {
-		return fmt.Errorf("the value that t point to is not a struct value")
-	}
-	type_ := value.Type()
-
-	// ensure Message AppKey
-	vv.MethodByName("EnsureMessageAppKey").Call([]reflect.Value{reflect.ValueOf(AppKey)})
-
-	msgtype := strings.ToLower(strings.TrimRight(type_.Name(), "Template"))
-	vv.MethodByName("EnsureMsgtype").Call([]reflect.Value{reflect.ValueOf(msgtype)})
-	vv.MethodByName("EnsureOfflineExpireTime").Call([]reflect.Value{})
-
-	return nil
-
-}
-
-func BuildTemplateMap(t interface{}) map[string]interface{} {
-	vv := reflect.ValueOf(t)
-	value := vv.Elem()
-	type_ := value.Type()
-
-	var result = map[string]interface{}{}
-
-	switch type_.Name() {
-	case "NotificationTemplate":
-		{
-			tem := t.(*NotificationTemplate)
-			result["message"] = tem.Message
-			result["notification"] = tem.Notification
-		}
-	case "TransmissionTemplate":
-		{
-			tem := t.(*TransmissionTemplate)
-			result["message"] = tem.Message
-			result["transmission"] = tem.Transmission
-			result["push_info"] = tem.PushInfo
-		}
-	}
-	return result
-}
 
 type Client struct {
 	AppID                string
@@ -159,13 +109,10 @@ func (c *Client) CloseAuth() (map[string]string, error) {
 	return c.httpRequestPost(url, nil)
 }
 
-func (c *Client) PushToSingle(t interface{}, CID string) (map[string]string, error) {
-	err := EnsureTemplateValue(t, c.AppKey)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) PushToSingle(t TemplateInterface, CID string) (map[string]string, error) {
+	t.EnsureTemplateValue(c.AppKey)
 
-	body := BuildTemplateMap(t)
+	body := t.TemplateMap()
 	body["cid"] = CID
 	body["requestid"] = utils.GenerateRequestID()
 
@@ -176,12 +123,10 @@ func (c *Client) PushToSingle(t interface{}, CID string) (map[string]string, err
 	return c.httpRequestPost(url, ioutil.NopCloser(bytes.NewReader(payload)))
 }
 
-func (c *Client) PushToApp(t interface{}, condition []Condition) (map[string]string, error) {
-	err := EnsureTemplateValue(t, c.AppKey)
-	if err != nil {
-		return nil, err
-	}
-	body := BuildTemplateMap(t)
+func (c *Client) PushToApp(t TemplateInterface, condition []Condition) (map[string]string, error) {
+	t.EnsureTemplateValue(c.AppKey)
+
+	body := t.TemplateMap()
 	body["requestid"] = utils.GenerateRequestID()
 
 	if len(condition) > 0 {

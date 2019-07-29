@@ -20,7 +20,7 @@ func main() {
 	fmt.Printf("init a getui client: %v\n", client)
 
 	fmt.Println("transmission message")
-	t := getui.TransmissionTemplate{}
+	t := getui.NewTransmissionTemplate(client.AppKey)
 	t.Transmission.TransmissionContent = ""
 	t.PushInfo.Aps.Alert.Title = "test"
 	t.PushInfo.Aps.Alert.Body = "test"
@@ -28,13 +28,13 @@ func main() {
 	t.PushInfo.Aps.ContentAvailable = 1
 
 	CID := "cid"
-	result, err := client.PushToSingle(&t, CID)
+	result, err := client.PushToSingle(t, CID)
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Printf("push to single result: %v\n", result)
 
-	result, err = client.PushToApp(&t, nil)
+	result, err = client.PushToApp(t, nil)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -42,11 +42,11 @@ func main() {
 
 	fmt.Println("notification message")
 
-	n := getui.NotificationTemplate{}
+	n := getui.NewNotificationTemplate(client.AppKey)
 	n.Notification.Style.Text = "test"
 	n.Notification.Style.Title = "test"
 
-	result, err = client.PushToSingle(&n, CID)
+	result, err = client.PushToSingle(n, CID)
 	if err != nil {
 		fmt.Println(err)
 	}

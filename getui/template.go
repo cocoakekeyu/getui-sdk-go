@@ -47,13 +47,42 @@ type Condition struct {
 	OptValue string `json:"opt_type"`
 }
 
+type TemplateInterface interface {
+	TemplateMap() map[string]interface{}
+	EnsureTemplateValue(string)
+}
+
 type Template struct {
 	Message Message `json:"message"`
+}
+
+func (t *Template) EnsureTemplateValue(AppKey string) {
+	if len(t.Message.AppKey) == 0 {
+		t.Message.AppKey = AppKey
+	}
+
+	if t.Message.OfflineExpireTime == 0 {
+		t.Message.OfflineExpireTime = 2000000
+	}
 }
 
 type NotificationTemplate struct {
 	Template
 	Notification Notification `json:"notification"`
+}
+
+func (t *NotificationTemplate) EnsureTemplateValue(AppKey string) {
+	if len(t.Message.MsgType) == 0 {
+		t.Message.MsgType = "notification"
+	}
+	t.Template.EnsureTemplateValue(AppKey)
+}
+
+func (t *NotificationTemplate) TemplateMap() (result map[string]interface{}) {
+	result = make(map[string]interface{})
+	result["message"] = t.Message
+	result["notification"] = t.Notification
+	return
 }
 
 type TransmissionTemplate struct {
@@ -62,20 +91,29 @@ type TransmissionTemplate struct {
 	PushInfo     PushInfo     `json:"push_info"`
 }
 
-func (t *Template) EnsureMessageAppKey(AppKey string) {
-	if len(t.Message.AppKey) == 0 {
-		t.Message.AppKey = AppKey
-	}
+func (t *TransmissionTemplate) TemplateMap() (result map[string]interface{}) {
+	result = make(map[string]interface{})
+	result["message"] = t.Message
+	result["transmission"] = t.Transmission
+	result["push_info"] = t.PushInfo
+	return
 }
 
-func (t *Template) EnsureMsgtype(msgtype string) {
+func (t *TransmissionTemplate) EnsureTemplateValue(AppKey string) {
 	if len(t.Message.MsgType) == 0 {
-		t.Message.MsgType = msgtype
+		t.Message.MsgType = "transmission"
 	}
+	t.Template.EnsureTemplateValue(AppKey)
 }
 
-func (t *Template) EnsureOfflineExpireTime() {
-	if t.Message.OfflineExpireTime == 0 {
-		t.Message.OfflineExpireTime = 2000000
-	}
+func NewNotificationTemplate(AppKey string) *NotificationTemplate {
+	t := new(NotificationTemplate)
+	t.EnsureTemplateValue(AppKey)
+	return t
+}
+
+func NewTransmissionTemplate(AppKey string) *TransmissionTemplate {
+	t := new(TransmissionTemplate)
+	t.EnsureTemplateValue(AppKey)
+	return t
 }
