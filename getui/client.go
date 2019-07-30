@@ -13,12 +13,15 @@ import (
 )
 
 const (
-	AUTH_TOKEN_URL_TPL  = "https://restapi.getui.com/v1/%s/auth_sign"
-	CLOSE_AUTH_URL_TPL  = "https://restapi.getui.com/v1/%s/auth_close"
-	PUSH_SINGLE_URL_TPL = "https://restapi.getui.com/v1/%s/push_single"
-	PUSH_APP_URL_TPL    = "https://restapi.getui.com/v1/%s/push_app"
-	USER_STATUS_URL_TPL = "https://restapi.getui.com/v1/%s/user_status/%s"
-	STOP_TASK_URL_TPL   = "https://restapi.getui.com/v1/%s/stop_task/%s"
+	AUTH_TOKEN_URL_TPL        = "https://restapi.getui.com/v1/%s/auth_sign"
+	CLOSE_AUTH_URL_TPL        = "https://restapi.getui.com/v1/%s/auth_close"
+	PUSH_SINGLE_URL_TPL       = "https://restapi.getui.com/v1/%s/push_single"
+	PUSH_APP_URL_TPL          = "https://restapi.getui.com/v1/%s/push_app"
+	USER_STATUS_URL_TPL       = "https://restapi.getui.com/v1/%s/user_status/%s"
+	STOP_TASK_URL_TPL         = "https://restapi.getui.com/v1/%s/stop_task/%s"
+	SVAE_LIST_BODY_URL_TPL    = "https://restapi.getui.com/v1/%s/save_list_body"
+	PUSH_LIST_URL_TPL         = "https://restapi.getui.com/v1/%s/push_list"
+	PUSH_SINGEL_BATCH_URL_TPL = "https://restapi.getui.com/v1/%s/push_single_batch"
 )
 
 type Client struct {
@@ -140,6 +143,41 @@ func (c *Client) PushToApp(t TemplateInterface, condition []Condition) (map[stri
 	return c.httpRequestPost(url, ioutil.NopCloser(bytes.NewReader(payload)))
 }
 
+func (c *Client) SaveListBody(t TemplateInterface) (map[string]string, error) {
+	body := t.TemplateMap()
+	payload, _ := json.Marshal(body)
+	url := fmt.Sprintf(SVAE_LIST_BODY_URL_TPL, c.AppID)
+	return c.httpRequestPost(url, ioutil.NopCloser(bytes.NewReader(payload)))
+}
+
+func (c *Client) PushToList(CID []string, TaskID string, NeedDetail bool) (map[string]string, error) {
+	body := make(map[string]interface{})
+	body["cid"] = CID
+	body["taskid"] = TaskID
+	body["need_detail"] = NeedDetail
+
+	payload, _ := json.Marshal(body)
+	url := fmt.Sprintf(PUSH_LIST_URL_TPL, c.AppID)
+	return c.httpRequestPost(url, ioutil.NopCloser(bytes.NewReader(payload)))
+}
+
+func (c *Client) PUSH_SINGLE_BATCH(templates []TemplateInterface, NeedDetail bool) (map[string]string, error) {
+	body := make(map[string]interface{})
+	MsgList := make([]interface{}, 0)
+	for _, t := range templates {
+		t.EnsureTemplateValue(c.AppKey)
+		m := t.TemplateMap()
+		m["requestid"] = utils.GenerateRequestID()
+		MsgList = append(MsgList, m)
+	}
+	body["msg_list"] = MsgList
+	body["need_detail"] = NeedDetail
+	payload, _ := json.Marshal(body)
+	fmt.Println(string(payload))
+	url := fmt.Sprintf(PUSH_SINGEL_BATCH_URL_TPL, c.AppID)
+	return c.httpRequestPost(url, ioutil.NopCloser(bytes.NewReader(payload)))
+}
+
 func (c *Client) UserStatus(CID string) (map[string]string, error) {
 	url := fmt.Sprintf(USER_STATUS_URL_TPL, c.AppID, CID)
 	return c.httpRequestGet(url)
@@ -155,17 +193,11 @@ func (c *Client) httpRequest(method string, url string, body io.Reader) (map[str
 	var err error
 	switch method {
 	case "GET":
-		{
-			req, err = http.NewRequest("GET", url, nil)
-		}
+		req, err = http.NewRequest("GET", url, nil)
 	case "POST":
-		{
-			req, err = http.NewRequest("POST", url, body)
-		}
+		req, err = http.NewRequest("POST", url, body)
 	case "DELETE":
-		{
-			req, err = http.NewRequest("DELETE", url, nil)
-		}
+		req, err = http.NewRequest("DELETE", url, nil)
 	}
 
 	req.Header["Content-Type"] = []string{"application/json"}
@@ -178,16 +210,21 @@ func (c *Client) httpRequest(method string, url string, body io.Reader) (map[str
 
 	defer resp.Body.Close()
 
-	var result map[string]string
+	var unmarshal map[string]interface{}
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("[HttpRequest] read response body failed, err: %s", err)
 	}
 
-	err = json.Unmarshal(data, &result)
+	err = json.Unmarshal(data, &unmarshal)
 	if err != nil {
 		return nil, fmt.Errorf("[HttpRequest] json umarshal response body failed, err: %s", err)
+	}
+
+	var result = make(map[string]string)
+	for key, value := range unmarshal {
+		result[key] = fmt.Sprintf("%v", value)
 	}
 
 	return result, nil

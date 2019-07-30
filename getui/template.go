@@ -29,6 +29,11 @@ type Transmission struct {
 	TransmissionContent string `json:"transmission_content"`
 }
 
+type Link struct {
+	Style Style  `json:"style"`
+	Url   string `json:"url"`
+}
+
 type PushInfo struct {
 	Aps struct {
 		Alert struct {
@@ -106,6 +111,40 @@ func (t *TransmissionTemplate) EnsureTemplateValue(AppKey string) {
 	t.Template.EnsureTemplateValue(AppKey)
 }
 
+type LinkTemplate struct {
+	Template
+	Link Link `json:"link"`
+}
+
+func (t *LinkTemplate) TemplateMap() (result map[string]interface{}) {
+	result = make(map[string]interface{})
+	result["message"] = t.Message
+	result["link"] = t.Link
+	return
+}
+
+func (t *LinkTemplate) EnsureTemplateValue(AppKey string) {
+	if len(t.Message.MsgType) == 0 {
+		t.Message.MsgType = "link"
+	}
+	t.Template.EnsureTemplateValue(AppKey)
+}
+
+type BatchMessageTemplate struct {
+	Template TemplateInterface
+	CID      string
+}
+
+func (t *BatchMessageTemplate) TemplateMap() (result map[string]interface{}) {
+	result = t.Template.TemplateMap()
+	result["cid"] = t.CID
+	return result
+}
+
+func (t *BatchMessageTemplate) EnsureTemplateValue(AppKey string) {
+	t.Template.EnsureTemplateValue(AppKey)
+}
+
 func NewNotificationTemplate(AppKey string) *NotificationTemplate {
 	t := new(NotificationTemplate)
 	t.EnsureTemplateValue(AppKey)
@@ -114,6 +153,20 @@ func NewNotificationTemplate(AppKey string) *NotificationTemplate {
 
 func NewTransmissionTemplate(AppKey string) *TransmissionTemplate {
 	t := new(TransmissionTemplate)
+	t.EnsureTemplateValue(AppKey)
+	return t
+}
+
+func NewLinkTemplate(AppKey string) *LinkTemplate {
+	t := new(LinkTemplate)
+	t.EnsureTemplateValue(AppKey)
+	return t
+}
+
+func NewBatchMessageTemplate(AppKey string, Template TemplateInterface, CID string) *BatchMessageTemplate {
+	t := new(BatchMessageTemplate)
+	t.Template = Template
+	t.CID = CID
 	t.EnsureTemplateValue(AppKey)
 	return t
 }
