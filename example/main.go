@@ -14,7 +14,7 @@ func main() {
 	)
 	var err error
 	var result map[string]string
-	var CID = "8e42279b3dfdbd335079b18f10b7ce9c"
+	var CID = "your cid"
 
 	client, err := getui.NewGeTuiClient(AppID, AppKey, MasterSecret)
 	if err != nil {
