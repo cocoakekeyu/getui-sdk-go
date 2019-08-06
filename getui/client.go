@@ -161,7 +161,7 @@ func (c *Client) PushToList(CID []string, TaskID string, NeedDetail bool) (map[s
 	return c.httpRequestPost(url, ioutil.NopCloser(bytes.NewReader(payload)))
 }
 
-func (c *Client) PUSH_SINGLE_BATCH(templates []TemplateInterface, NeedDetail bool) (map[string]string, error) {
+func (c *Client) PushSingleBatch(templates []TemplateInterface, NeedDetail bool) (map[string]string, error) {
 	body := make(map[string]interface{})
 	MsgList := make([]interface{}, 0)
 	for _, t := range templates {

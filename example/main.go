@@ -92,7 +92,7 @@ func main() {
 
 	templates := []getui.TemplateInterface{b1, b2}
 
-	result, err = client.PUSH_SINGLE_BATCH(templates, false)
+	result, err = client.PushSingleBatch(templates, false)
 	if err != nil {
 		fmt.Println(err)
 	}

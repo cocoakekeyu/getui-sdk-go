@@ -1,6 +1,6 @@
 ## 个推 Go SDK
 
-个推简单的服务端 Go 语言实现的 SDK, 已可以使用单推、推送 APP 等功能。
+个推简单的服务端 Go 语言实现的 SDK, 可以使用单推、群推、推送 APP 等功能。
 
 
 ## 用法
@@ -101,7 +101,7 @@ if err != nil {
 fmt.Printf("user status result: %v\n", result)
 
 // 停止群推任务
-result, err = client.StopTask(CID)
+result, err = client.StopTask(taskid)
 if err != nil {
 	fmt.Println(err)
 }
